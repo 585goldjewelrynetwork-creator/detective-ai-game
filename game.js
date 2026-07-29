@@ -491,6 +491,22 @@ function resizeCanvas() {
 }
 window.addEventListener("resize", resizeCanvas);
 
+// ============================================================================
+// ЗВУК
+// ============================================================================
+const soundBtn = document.getElementById("sound-btn");
+function refreshSoundBtn() {
+  const on = Sound.isEnabled();
+  soundBtn.textContent = on ? "🔊 Звук вкл" : "🔇 Звук выкл";
+  soundBtn.classList.toggle("hud-btn-accent", on);
+}
+function toggleSound() {
+  Sound.toggle();
+  refreshSoundBtn();
+}
+soundBtn.onclick = toggleSound;
+refreshSoundBtn();
+
 const fsBtn = document.getElementById("fullscreen-btn");
 function toggleFullscreen() {
   const el = document.documentElement;
@@ -518,6 +534,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeTopLayer();
   if (e.key === "b" || e.key === "B" || e.key === "и" || e.key === "И") toggleNotebook();
   if (e.key === "f" || e.key === "F" || e.key === "а" || e.key === "А") toggleFullscreen();
+  if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") toggleSound();
 }, { passive: false });
 window.addEventListener("keyup", (e) => { keys[e.key] = false; });
 
@@ -552,12 +569,14 @@ function startDialog(npc) {
   document.getElementById("dialog-name").textContent = npc.name.toUpperCase();
   document.getElementById("dialog-text").textContent = dialogQueue[0];
   document.getElementById("dialog-box").classList.remove("hidden");
+  Sound.blip();
   gameState = "paused";
 }
 function advanceDialog() {
   if (!dialogQueue) return;
   if (++dialogIndex >= dialogQueue.length) { closeDialog(); return; }
   document.getElementById("dialog-text").textContent = dialogQueue[dialogIndex];
+  Sound.blip();
 }
 function closeDialog() {
   document.getElementById("dialog-box").classList.add("hidden");
@@ -586,15 +605,18 @@ function openFind(poi) {
 
   document.getElementById("find-ok").textContent = "Понятно, иду дальше";
   document.getElementById("find-ok").onclick = () => {
+    const isNew = !progressDone.has(poi.id);
     closeFind();
-    if (!progressDone.has(poi.id)) {
+    if (isNew) {
       progressDone.add(poi.id);
       updateProgress();
+      Sound.coin();          // улика засчитана
       maybeShowFinal();
     }
   };
   closeNotebook();
   document.getElementById("find-modal").classList.remove("hidden");
+  Sound.open();
   gameState = "paused";
 }
 
@@ -612,12 +634,14 @@ function openBonus(bonus) {
   document.getElementById("find-ok").onclick = closeFind;
   closeNotebook();
   document.getElementById("find-modal").classList.remove("hidden");
+  Sound.open();
   gameState = "paused";
 }
 
 function closeFind() {
   document.getElementById("find-modal").classList.add("hidden");
   document.getElementById("find-body").innerHTML = "";  // останавливает видео
+  Sound.close();
   gameState = "playing";
 }
 document.getElementById("find-close").onclick = closeFind;
@@ -636,6 +660,7 @@ function maybeShowFinal() {
   finalShown = true;
   setTimeout(() => {
     document.getElementById("final-modal").classList.remove("hidden");
+    Sound.fanfare();
     gameState = "paused";
   }, 400);
 }
@@ -691,6 +716,8 @@ document.getElementById("notebook-close").onclick = closeNotebook;
 // ---------- Вступление ----------
 document.getElementById("intro-start").onclick = () => {
   document.getElementById("intro-modal").classList.add("hidden");
+  Sound.resumeIfEnabled();   // клик — это жест пользователя, музыку можно запускать
+  refreshSoundBtn();
   gameState = "playing";
 };
 
@@ -727,7 +754,11 @@ function update(dt) {
 
   if (player.moving) {
     player.animTimer += dt;
-    if (player.animTimer > 0.17) { player.animTimer = 0; player.animFrame = 1 - player.animFrame; }
+    if (player.animTimer > 0.17) {
+      player.animTimer = 0;
+      player.animFrame = 1 - player.animFrame;
+      Sound.step();          // шаг совпадает со сменой кадра
+    }
   } else player.animFrame = 0;
 
   camera.x = Math.max(0, Math.min(player.x + player.w / 2 - viewW / 2, Math.max(0, WORLD_W - viewW)));
@@ -766,6 +797,11 @@ function findActiveTarget() {
   });
   const bd = dist(pcx, pcy, px(BONUS.col), py(BONUS.row));
   if (bd < bestD) { bestD = bd; best = { kind: "bonus", data: BONUS }; }
+
+  // звук при подходе к новой точке (один раз, а не каждый кадр)
+  const prevId = activeTarget ? (activeTarget.data.id || activeTarget.data.name) : null;
+  const newId = best ? (best.data.id || best.data.name) : null;
+  if (newId && newId !== prevId && gameState === "playing") Sound.near();
 
   activeTarget = best;
   const hint = document.getElementById("hint");

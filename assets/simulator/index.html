@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Симулятор диалога с ИИ — Модуль 3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --teal:      #0A8A9A;
+    --teal-dark: #076670;
+    --teal-glow: rgba(10,138,154,0.18);
+    --dark:      #0C1E2A;
+    --dark2:     #112233;
+    --dark3:     #162B3C;
+    --panel:     #0E2030;
+    --card:      #132536;
+    --border:    rgba(10,138,154,0.25);
+    --gold:      #E8A020;
+    --green:     #22C55E;
+    --red:       #EF4444;
+    --text:      #D4E8F0;
+    --muted:     #6B8FA0;
+    --white:     #FFFFFF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(10,138,154,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(10,138,154,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    position: relative;
+    z-index: 10;
+    padding: 24px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(12,30,42,0.92);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .header-badge {
+    background: var(--teal);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: -0.3px;
+  }
+
+  .header-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .header-score {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+  }
+
+  .score-label { font-size: 11px; color: var(--muted); }
+  .score-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--gold);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    height: calc(100vh - 73px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-head {
+    padding: 20px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-head h3 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .sidebar-head p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .scenarios { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+  .scenario-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scenario-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--teal);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .scenario-card:hover { border-color: rgba(10,138,154,0.5); transform: translateX(2px); }
+  .scenario-card.active { border-color: var(--teal); background: rgba(10,138,154,0.12); }
+  .scenario-card.active::before { opacity: 1; }
+  .scenario-card.done { opacity: 0.55; }
+  .scenario-card.done::after {
+    content: '✓';
+    position: absolute;
+    top: 10px; right: 12px;
+    color: var(--green);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .sc-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .sc-title { font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
+  .sc-desc { font-size: 11px; color: var(--muted); line-height: 1.45; }
+
+  .sc-difficulty {
+    display: flex;
+    gap: 3px;
+    margin-top: 8px;
+  }
+
+  .sc-difficulty span {
+    width: 18px; height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+  }
+
+  .sc-difficulty.easy span:nth-child(1) { background: var(--green); }
+  .sc-difficulty.medium span:nth-child(1),
+  .sc-difficulty.medium span:nth-child(2) { background: var(--gold); }
+  .sc-difficulty.hard span { background: var(--red); }
+
+  /* ── MAIN ── */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Scenario intro */
+  .scenario-intro {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(14,32,48,0.7);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .intro-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px var(--teal-glow);
+  }
+
+  .intro-text h2 { font-size: 15px; font-weight: 700; color: var(--white); margin-bottom: 4px; }
+  .intro-text p { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+  .data-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(10,138,154,0.15);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--teal);
+    margin-top: 8px;
+  }
+
+  /* Chat */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-track { background: transparent; }
+  .chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .msg {
+    display: flex;
+    gap: 12px;
+    animation: msgIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .msg.user { flex-direction: row-reverse; }
+
+  .msg-avatar {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .msg.ai .msg-avatar {
+    background: linear-gradient(135deg, var(--teal), #06505A);
+    box-shadow: 0 0 14px var(--teal-glow);
+  }
+
+  .msg.user .msg-avatar {
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  .msg-bubble {
+    max-width: 72%;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13px;
+    line-height: 1.65;
+    position: relative;
+  }
+
+  .msg.ai .msg-bubble {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-top-left-radius: 3px;
+  }
+
+  .msg.user .msg-bubble {
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    color: #fff;
+    border-top-right-radius: 3px;
+    box-shadow: 0 4px 20px var(--teal-glow);
+  }
+
+  .msg-name {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    color: var(--teal);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .msg.user .msg-name { color: rgba(255,255,255,0.7); text-align: right; }
+
+  /* Feedback badge inside bubble */
+  .feedback-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-top: 10px;
+  }
+
+  .feedback-badge.good { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .feedback-badge.ok   { background: rgba(232,160,32,0.15); color: var(--gold); border: 1px solid rgba(232,160,32,0.3); }
+  .feedback-badge.bad  { background: rgba(239,68,68,0.12); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+
+  /* Prompt quality meter */
+  .quality-meter {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: rgba(0,0,0,0.25);
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .quality-label {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .quality-bar {
+    height: 5px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .quality-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .quality-items {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 8px;
+  }
+
+  .quality-item {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+  }
+
+  .quality-item.has { color: var(--text); }
+  .quality-item.has::before { content: '✓'; color: var(--green); font-weight: 700; }
+  .quality-item.missing::before { content: '○'; color: var(--muted); }
+
+  /* Suggestions */
+  .suggestions {
+    padding: 12px 28px 16px;
+    border-top: 1px solid var(--border);
+    background: rgba(14,32,48,0.5);
+  }
+
+  .suggestions-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .suggestions-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .suggestion-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+
+  .suggestion-chip:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: var(--teal-glow);
+    transform: translateY(-1px);
+  }
+
+  /* Input */
+  .input-area {
+    padding: 16px 28px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(12,30,42,0.95);
+  }
+
+  .input-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 10px 10px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .input-wrap:focus-within {
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px var(--teal-glow);
+  }
+
+  #userInput {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    line-height: 1.55;
+    resize: none;
+    max-height: 100px;
+    min-height: 20px;
+  }
+
+  #userInput::placeholder { color: var(--muted); }
+
+  .send-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.18s;
+    box-shadow: 0 0 12px var(--teal-glow);
+  }
+
+  .send-btn:hover { transform: scale(1.08); box-shadow: 0 0 20px var(--teal-glow); }
+  .send-btn:active { transform: scale(0.96); }
+
+  .send-btn svg { width: 16px; height: 16px; fill: #fff; }
+
+  /* Typing indicator */
+  .typing {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .typing-dots {
+    display: flex;
+    gap: 5px;
+    padding: 12px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    border-top-left-radius: 3px;
+  }
+
+  .typing-dots span {
+    width: 6px; height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+    opacity: 0.6;
+  }
+
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* Result modal */
+  .result-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .result-overlay.show { display: flex; }
+
+  .result-modal {
+    background: var(--dark2);
+    border: 1px solid var(--teal);
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 480px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 0 60px var(--teal-glow);
+    animation: modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .result-emoji { font-size: 56px; margin-bottom: 16px; }
+  .result-title { font-size: 26px; font-weight: 800; color: var(--white); margin-bottom: 8px; }
+  .result-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+
+  .result-score-big {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 64px;
+    font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .result-score-label { font-size: 12px; color: var(--muted); margin-bottom: 28px; }
+
+  .result-tip {
+    background: rgba(10,138,154,0.12);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.55;
+    text-align: left;
+    margin-bottom: 24px;
+  }
+
+  .result-tip strong { color: var(--teal); }
+
+  .result-btn {
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 32px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s;
+    box-shadow: 0 0 24px var(--teal-glow);
+    width: 100%;
+  }
+
+  .result-btn:hover { transform: translateY(-2px); box-shadow: 0 0 36px var(--teal-glow); }
+
+  /* Empty state */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .empty-icon { font-size: 48px; }
+  .empty-text { font-size: 14px; color: var(--muted); text-align: center; max-width: 260px; line-height: 1.5; }
+
+  /* Scrollbar */
+  .scenarios::-webkit-scrollbar { width: 3px; }
+  .scenarios::-webkit-scrollbar-track { background: transparent; }
+  .scenarios::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-badge">МОДУЛЬ 4</div>
+  <div>
+    <div class="header-title">Симулятор диалога с ИИ</div>
+    <div class="header-sub">Анализ данных с помощью ИИ — 585GOLD</div>
+  </div>
+  <div class="header-score">
+    <span class="score-label">Очки</span>
+    <span class="score-val" id="totalScore">0</span>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <h3>Сценарии</h3>
+      <p>Выберите задачу и попрактикуйтесь в составлении промптов для анализа данных</p>
+    </div>
+    <div class="scenarios" id="scenarioList"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="mainArea">
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">💬</div>
+      <div class="empty-text">Выберите сценарий слева, чтобы начать диалог с ИИ</div>
+    </div>
+
+    <!-- Active scenario UI (hidden initially) -->
+    <div id="activeUI" class="hidden" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="scenario-intro">
+        <div class="intro-icon" id="introIcon">📊</div>
+        <div class="intro-text">
+          <h2 id="introTitle">—</h2>
+          <p id="introDesc">—</p>
+          <div class="data-pill" id="dataPill">📄 данные загружены</div>
+        </div>
+      </div>
+
+      <div class="chat-area" id="chatArea"></div>
+
+      <div class="suggestions" id="suggestionsArea">
+        <div class="suggestions-label">Подсказки для старта</div>
+        <div class="suggestions-row" id="suggestionsRow"></div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrap">
+          <textarea id="userInput" rows="1" placeholder="Напишите промпт..."></textarea>
+          <button class="send-btn" id="sendBtn">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Result modal -->
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-modal">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <div class="result-title" id="resultTitle">Отлично!</div>
+    <div class="result-sub" id="resultSub">Сценарий завершён</div>
+    <div class="result-score-big" id="resultScoreBig">+30</div>
+    <div class="result-score-label">очков заработано</div>
+    <div class="result-tip" id="resultTip"></div>
+    <button class="result-btn" id="resultBtn">Следующий сценарий →</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const SCENARIOS = [
+  {
+    id: 0,
+    icon: '📦',
+    tag: 'ТОПОВЫЕ ПОЗИЦИИ',
+    title: 'Найти лидеров продаж',
+    desc: 'Таблица продаж украшений 585GOLD за Q1 2025. Нужно выяснить, какие изделия продаются лучше всего.',
+    difficulty: 'easy',
+    dataPill: '📄 sales_Q1_2025.csv — 847 строк',
+    intro: 'Перед вами таблица продаж за первый квартал 2025 года. Там 847 строк: изделие, категория, магазин, количество, выручка, дата. Ваша задача — найти самые продаваемые позиции.',
+    suggestions: [
+      'Найди топ-5 изделий по выручке',
+      'Какие категории продаются лучше всего?',
+      'Сравни золото и серебро по количеству продаж',
+    ],
+    turns: [
+      {
+        // Оценка первого сообщения пользователя
+        evaluate: (msg) => {
+          const lower = msg.toLowerCase();
+          const hasTop    = /топ|лучш|наибол|первые|высок/i.test(msg);
+          const hasMetric = /выручк|продаж|количеств|сумм/i.test(msg);
+          const hasFormat = /список|таблиц|формат|пронумер|покажи/i.test(msg);
+          const hasContext = /украш|ювелир|изделие|кольц|серьг|браслет|585/i.test(msg);
+          const score = [hasTop, hasMetric, hasFormat, hasContext].filter(Boolean).length;
+
+          const checks = [
+            { label: 'Указан критерий (выручка/кол-во)', has: hasMetric },
+            { label: 'Запрошен рейтинг/топ', has: hasTop },
+            { label: 'Указан формат ответа', has: hasFormat },
+            { label: 'Упомянут контекст (украшения)', has: hasContext },
+          ];
+
+          if (score >= 3) {
+            return {
+              quality: 90, level: 'good',
+              reply: `Отлично! По данным за Q1 2025 — **топ-5 по выручке**:\n\n1. Кольцо с бриллиантом 0.3ct — **1 248 500 ₽** (98 шт.)\n2. Серьги-пусеты золото — **891 200 ₽** (204 шт.)\n3. Браслет плетёный золото — **763 400 ₽** (87 шт.)\n4. Кольцо обручальное — **654 100 ₽** (312 шт.)\n5. Подвеска с топазом — **487 900 ₽** (156 шт.)\n\nОбратите внимание: кольцо с бриллиантом лидирует по выручке, хотя по количеству продаж значительно уступает обручальным кольцам. Средний чек самый высокий в категории «Бриллианты».`,
+              feedback: 'Промпт чёткий и конкретный — ИИ дал развёрнутый ответ с цифрами',
+              followUp: 'Хотите сравнить эти позиции по магазинам или посмотреть динамику по месяцам?',
+              checks,
+            };
+          } else if (score >= 2) {
+            return {
+              quality: 55, level: 'ok',
+              reply: `Вот продажи за Q1 2025. По выручке лидируют кольца с бриллиантами — около 1,2 млн ₽. Серьги и браслеты тоже показывают хорошие результаты.\n\nУточните: вас интересует топ по выручке или по количеству проданных единиц? И сколько позиций показать — 5 или 10?`,
+              feedback: 'Хороший старт, но ИИ попросил уточнений — промпту не хватало деталей',
+              followUp: 'Уточните запрос: добавьте метрику (выручка/кол-во) и количество позиций в списке',
+              checks,
+            };
+          } else {
+            return {
+              quality: 20, level: 'bad',
+              reply: `Я вижу загруженные данные. Что именно вас интересует? Могу проанализировать продажи по разным критериям: выручка, количество, категории, магазины, динамика по времени. Пожалуйста, уточните задачу.`,
+              feedback: 'Промпт слишком размытый — ИИ не понял задачу и попросил объяснить',
+              followUp: 'Попробуйте добавить: что именно нужно (топ-5), по какому критерию (выручка), в каком виде (список)',
+              checks,
+            };
+          }
+        },
+        isLast: false,
+      },
+      {
+        evaluate: (msg) => {
+          const hasRefine = /месяц|динам|магазин|сравни|разниц|почему|объясни|визуал|график/i.test(msg);
+          const hasSpecific = /январ|феврал|март|центр|север|юг|запад|восток|\d/i.test(msg);
+
+          if (hasRefine && hasSpecific) {
+            return {
+              quality: 95, level: 'good',
+              reply: `**Сравнение по магазинам — топ-3 позиции:**\n\nМагазин «Центр» опережает «Север» на **34%** по выручке. Кольцо с бриллиантом продаётся в «Центре» в 2,1 раза лучше — вероятно, из-за более высокого трафика и ценового сегмента покупателей.\n\nПик продаж пришёлся на **февраль** (День влюблённых) — +68% к январю. В марте небольшой спад — -12%.`,
+              feedback: 'Отличный уточняющий промпт! Именно так работает диалог с ИИ',
+              followUp: null,
+              checks: [
+                { label: 'Уточнена задача', has: true },
+                { label: 'Добавлена конкретика', has: hasSpecific },
+                { label: 'Запрошено сравнение', has: hasRefine },
+                { label: 'Диалог продолжен', has: true },
+              ],
+            };
+          } else if (hasRefine) {
+            return {
+              quality: 65, level: 'ok',
+              reply: `Сравниваю по магазинам. «Центр» лидирует с отрывом. Хотите конкретные цифры или визуальное сравнение?`,
+              feedback: 'Хорошо, но можно было ещё точнее — например, указать конкретные магазины',
+              followUp: null,
+              checks: [
+                { label: 'Уточнена задача', has: true },
+                { label: 'Добавлена конкретика', has: false },
+                { label: 'Запрошено сравнение', has: hasRefine },
+                { label: 'Диалог продолжен', has: true },
+              ],
+            };
+          } else {
+            return {
+              quality: 30, level: 'bad',
+              reply: `Я могу помочь с разными аспектами анализа. Что именно вас интересует в продолжении?`,
+              feedback: 'Уточняющий промпт слишком общий — попробуйте задать конкретный вопрос',
+              followUp: null,
+              checks: [
+                { label: 'Уточнена задача', has: false },
+                { label: 'Добавлена конкретика', has: false },
+                { label: 'Запрошено сравнение', has: false },
+                { label: 'Диалог продолжен', has: true },
+              ],
+            };
+          }
+        },
+        isLast: true,
+        tip: 'Ключевой навык: каждый уточняющий промпт должен добавлять конкретику — период, метрику, формат. Чем точнее вопрос, тем полезнее ответ.',
+      },
+    ],
+  },
+
+  {
+    id: 1,
+    icon: '📈',
+    tag: 'ТРЕНДЫ',
+    title: 'Найти сезонность',
+    desc: 'Годовая таблица продаж по месяцам. Нужно выявить сезонные паттерны и пики.',
+    difficulty: 'medium',
+    dataPill: '📄 monthly_sales_2024.csv — 12 строк',
+    intro: 'Таблица помесячных продаж 585GOLD за весь 2024 год: месяц, выручка, количество чеков, средний чек. Задача — выявить сезонность и объяснить паттерны.',
+    suggestions: [
+      'Есть ли сезонные паттерны в продажах?',
+      'В какие месяцы пики и спады?',
+      'Построй линейный график по месяцам',
+    ],
+    turns: [
+      {
+        evaluate: (msg) => {
+          const hasSeason  = /сезон|паттерн|тренд|динам|колебан|цикл/i.test(msg);
+          const hasPeak    = /пик|спад|рост|падени|максим|миним/i.test(msg);
+          const hasMonth   = /месяц|квартал|период/i.test(msg);
+          const hasContext = /выручк|продаж|чек|ювелир|585/i.test(msg);
+          const score = [hasSeason, hasPeak, hasMonth, hasContext].filter(Boolean).length;
+
+          const checks = [
+            { label: 'Запрошены паттерны/тренды', has: hasSeason || hasPeak },
+            { label: 'Упомянут временной период', has: hasMonth },
+            { label: 'Указан контекст', has: hasContext },
+            { label: 'Задан конкретный вопрос', has: msg.length > 30 },
+          ];
+
+          if (score >= 3) {
+            return {
+              quality: 88, level: 'good',
+              reply: `**Сезонность продаж 585GOLD за 2024 год:**\n\n**Пики:**\n• Февраль — +74% к январю (День влюблённых)\n• Декабрь — +92% к ноябрю (Новый год и Рождество)\n• Март — +31% (8 марта)\n\n**Спады:**\n• Июнь–Август — традиционное летнее затишье (-28% к маю)\n• Сентябрь — плавное восстановление\n\n**Вывод:** Бизнес ярко выраженный сезонный — 3 пиковых периода генерируют ~54% годовой выручки. Рекомендую усиливать рекламу за 3–4 недели до февраля и декабря.`,
+              feedback: 'Промпт дал ИИ достаточно контекста для глубокого анализа — отличный результат!',
+              followUp: 'Хотите построить визуализацию этих данных или сравнить с предыдущим годом?',
+              checks,
+            };
+          } else if (score >= 2) {
+            return {
+              quality: 50, level: 'ok',
+              reply: `В данных видна явная сезонность. Пики приходятся на февраль и декабрь — это праздничные месяцы. Летом продажи снижаются.\n\nЧтобы дать более точный анализ — уточните: вас интересует выручка, количество чеков или средний чек?`,
+              feedback: 'Ответ получился общим — промпту не хватало конкретики',
+              followUp: 'Добавьте в промпт: что именно анализируем (выручку/чеки) и что сделать с результатом (вывод/график)',
+              checks,
+            };
+          } else {
+            return {
+              quality: 15, level: 'bad',
+              reply: `Я вижу данные по месяцам. Чтобы сделать полезный анализ, мне нужно понять: что именно вы хотите узнать о сезонности? Какие решения будете принимать на основе этих данных?`,
+              feedback: 'Промпт слишком размыт — ИИ не понял цели анализа',
+              followUp: 'Начните с чёткой задачи: «Проанализируй сезонные паттерны в продажах и укажи месяцы пиков и спадов»',
+              checks,
+            };
+          }
+        },
+        isLast: false,
+      },
+      {
+        evaluate: (msg) => {
+          const hasViz     = /граф|визуал|диаграмм|показ|нарис/i.test(msg);
+          const hasCompare = /сравни|предыдущ|прошл|2023|год/i.test(msg);
+          const hasAction  = /рекоменд|что делать|план|как использ|стратег/i.test(msg);
+          const hasGood = hasViz || hasCompare || hasAction;
+
+          if (hasGood) {
+            return {
+              quality: 92, level: 'good',
+              reply: hasViz
+                ? `**График построен.** По линейной диаграмме хорошо видны три волны роста — февраль, март и декабрь. Летний провал июня–августа — устойчивый паттерн. Ось X — месяц, ось Y — выручка в тыс. ₽.\n\nЕсли нужно — могу добавить планируемые показатели на 2025 год для сравнения.`
+                : hasCompare
+                ? `**Сравнение 2023 и 2024:** В 2024 году общая выручка выросла на **18%**. Февраль 2024 оказался рекордным — +43% к февралю 2023. Декабрь показал стабильный рост +12%. Летний спад в 2024 был менее глубоким (-21% против -34% в 2023).`
+                : `**Рекомендации на основе сезонности:**\n1. Запустить рекламу за 4 недели до пиков (январь, февраль, ноябрь)\n2. В летний спад делать акцент на корпоративные подарки и свадебные украшения\n3. Создать запас популярных позиций к декабрю уже в октябре`,
+              feedback: 'Отличное продолжение диалога! Вы использовали ответ ИИ для следующего шага',
+              followUp: null,
+              checks: [
+                { label: 'Продолжен диалог', has: true },
+                { label: 'Запрошено действие', has: hasGood },
+                { label: 'Конкретный следующий шаг', has: true },
+                { label: 'Используете результат', has: true },
+              ],
+            };
+          } else {
+            return {
+              quality: 35, level: 'bad',
+              reply: `Понял. Что ещё вас интересует в этих данных?`,
+              feedback: 'Уточняющий вопрос слишком общий — ИИ не смог помочь дальше',
+              followUp: null,
+              checks: [
+                { label: 'Продолжен диалог', has: true },
+                { label: 'Запрошено действие', has: false },
+                { label: 'Конкретный следующий шаг', has: false },
+                { label: 'Используете результат', has: false },
+              ],
+            };
+          }
+        },
+        isLast: true,
+        tip: 'После получения анализа — всегда делайте следующий шаг: попросите визуализацию, сравнение или рекомендации. Именно цепочка промптов даёт настоящую ценность.',
+      },
+    ],
+  },
+
+  {
+    id: 2,
+    icon: '🔍',
+    tag: 'КАЧЕСТВО ДАННЫХ',
+    title: 'Найти ошибки в таблице',
+    desc: 'Таблица с заказами содержит ошибки. Нужно найти дубликаты и аномалии.',
+    difficulty: 'medium',
+    dataPill: '📄 orders_march.xlsx — 1 204 строки',
+    intro: 'Вам прислали выгрузку заказов за март 2025. Подозрения, что там есть дубликаты и некорректные значения. Перед анализом нужно очистить данные.',
+    suggestions: [
+      'Проверь таблицу на дубликаты и ошибки',
+      'Найди строки с пустыми значениями',
+      'Есть ли аномальные суммы заказов?',
+    ],
+    turns: [
+      {
+        evaluate: (msg) => {
+          const hasDuplicate = /дублик|повтор|одинаков/i.test(msg);
+          const hasEmpty     = /пуст|незапол|отсутств|null|пропуск/i.test(msg);
+          const hasAnomaly   = /аномал|некоррект|ошибк|нереал|странн|выброс/i.test(msg);
+          const hasAction    = /найди|провер|покаж|перечисл|укаж/i.test(msg);
+          const score = [hasDuplicate, hasEmpty, hasAnomaly, hasAction].filter(Boolean).length;
+
+          const checks = [
+            { label: 'Запрошена проверка дубликатов', has: hasDuplicate },
+            { label: 'Упомянуты пустые значения', has: hasEmpty },
+            { label: 'Запрос аномальных значений', has: hasAnomaly },
+            { label: 'Чёткое действие (найди/проверь)', has: hasAction },
+          ];
+
+          if (score >= 3) {
+            return {
+              quality: 93, level: 'good',
+              reply: `**Результаты проверки качества данных:**\n\n🔴 **Дубликаты:** 23 строки (одинаковый ID заказа + дата + сумма)\n🟡 **Пустые значения:**\n  • Столбец «Телефон» — 47 строк\n  • Столбец «Email» — 12 строк\n🔴 **Аномалии:**\n  • 3 заказа на сумму 0 ₽ (строки 145, 389, 1102)\n  • 1 заказ на сумму 999 999 ₽ (строка 567) — вероятная ошибка ввода\n  • 8 заказов с датой «01.01.1900» — явный баг импорта\n\n**Рекомендация:** Удалите 23 дубликата и 3 нулевых заказа перед анализом. Строку 567 проверьте вручную.`,
+              feedback: 'Превосходный промпт! Три типа ошибок указаны чётко — ИИ провёл полную проверку',
+              followUp: 'Хотите, чтобы я очистил данные автоматически или сначала показал все проблемные строки?',
+              checks,
+            };
+          } else if (score >= 2) {
+            return {
+              quality: 55, level: 'ok',
+              reply: `Нашёл несколько проблем: есть дубликаты (около 20 строк) и несколько пустых полей. Также вижу подозрительные суммы.\n\nЧтобы дать полный отчёт — уточните: нужно ли проверить конкретные столбцы или всю таблицу целиком?`,
+              feedback: 'Неплохо, но промпт можно было сделать полнее — ИИ нашёл не всё',
+              followUp: 'Добавьте в промпт перечень типов ошибок: дубликаты + пустые ячейки + нереалистичные значения',
+              checks,
+            };
+          } else {
+            return {
+              quality: 18, level: 'bad',
+              reply: `Таблица загружена. Данные выглядят как обычная выгрузка заказов. Что именно вы хотите проверить или найти?`,
+              feedback: 'Промпт не объяснил задачу — ИИ не знает что искать',
+              followUp: 'Шаблон: «Проверь таблицу на: 1) дубликаты строк, 2) пустые ячейки, 3) нереалистичные значения. Перечисли все найденные проблемы с указанием строк»',
+              checks,
+            };
+          }
+        },
+        isLast: false,
+      },
+      {
+        evaluate: (msg) => {
+          const hasFix    = /удали|очист|исправ|убери|автомат/i.test(msg);
+          const hasReport = /отчёт|список|покаж|все строк|подробн/i.test(msg);
+          const hasWhy    = /почему|причин|откуда|как получил/i.test(msg);
+
+          if (hasFix || hasReport || hasWhy) {
+            return {
+              quality: 88, level: 'good',
+              reply: hasFix
+                ? `**Данные очищены.** Удалено: 23 дубликата, 3 нулевых заказа, 8 строк с некорректными датами. Итого убрано **34 строки** из 1204. Осталось **1170 строк** — готовы к анализу.\n\nСтрока 567 (999 999 ₽) оставлена — требует ручной проверки.`
+                : hasReport
+                ? `**Полный список проблемных строк:**\nДубликаты: 12, 45, 89, 134... (23 всего)\nНулевые суммы: 145, 389, 1102\nНекорректные даты: 7, 23, 56, 91, 203, 445, 678, 890\nПодозрительная сумма: 567 (999 999 ₽)`
+                : `Дубликаты появились скорее всего из-за двойной выгрузки — часть данных была экспортирована дважды. Нулевые заказы — вероятно, отменённые или тестовые. Некорректные даты — классическая проблема при импорте из старых систем.`,
+              feedback: 'Отлично — вы конкретно указали, что делать дальше с найденными проблемами!',
+              followUp: null,
+              checks: [
+                { label: 'Дано конкретное действие', has: hasFix || hasReport },
+                { label: 'Продолжен диалог', has: true },
+                { label: 'Использован ответ ИИ', has: true },
+                { label: 'Промпт конкретный', has: true },
+              ],
+            };
+          } else {
+            return {
+              quality: 25, level: 'bad',
+              reply: `Хорошо. Что ещё нужно сделать с данными?`,
+              feedback: 'Расплывчатый ответ — ИИ не получил чёткой инструкции',
+              followUp: null,
+              checks: [
+                { label: 'Дано конкретное действие', has: false },
+                { label: 'Продолжен диалог', has: true },
+                { label: 'Использован ответ ИИ', has: false },
+                { label: 'Промпт конкретный', has: false },
+              ],
+            };
+          }
+        },
+        isLast: true,
+        tip: 'После того как ИИ нашёл проблемы — обязательно скажите ему что делать дальше: удалить, показать список или объяснить причины. Это и есть навык работы в диалоге.',
+      },
+    ],
+  },
+
+  {
+    id: 3,
+    icon: '👤',
+    tag: 'ПОРТРЕТ КЛИЕНТА',
+    title: 'Составить портрет покупателя',
+    desc: 'Таблица транзакций с данными о покупках. Нужно описать типичного клиента.',
+    difficulty: 'hard',
+    dataPill: '📄 transactions_2024.csv — 5 821 строка',
+    intro: 'Полная база транзакций 585GOLD за 2024 год: клиент (анонимно), сумма, категория товара, дата, город, способ оплаты. Нужно составить портрет типичного покупателя.',
+    suggestions: [
+      'Опиши типичного покупателя 585GOLD',
+      'Какой средний чек и частота покупок?',
+      'Сравни покупателей украшений с бриллиантами и без',
+    ],
+    turns: [
+      {
+        evaluate: (msg) => {
+          const hasPortrait = /портрет|профил|описа|кто|типичн/i.test(msg);
+          const hasMetric   = /средн|чек|частот|возраст|катего|сумм/i.test(msg);
+          const hasFormat   = /5 предлож|кратко|список|описан|резюм/i.test(msg);
+          const hasContext  = /покупател|клиент|ювелир|585|украш/i.test(msg);
+          const score = [hasPortrait, hasMetric, hasFormat, hasContext].filter(Boolean).length;
+
+          const checks = [
+            { label: 'Задача портрета сформулирована', has: hasPortrait },
+            { label: 'Указаны метрики (чек, частота)', has: hasMetric },
+            { label: 'Указан формат (5 предложений/список)', has: hasFormat },
+            { label: 'Есть контекст (клиент/украшения)', has: hasContext },
+          ];
+
+          if (score >= 3) {
+            return {
+              quality: 91, level: 'good',
+              reply: `**Портрет типичного покупателя 585GOLD (2024):**\n\nЖенщина 28–42 лет, покупает украшения 2–3 раза в год. Средний чек — **8 400 ₽**. Предпочитает золотые изделия (68% покупок), особенно кольца и серьги. Оплачивает картой или через СБП. Чаще всего приходит в феврале и декабре — к праздникам.\n\n**Два сегмента:**\n• Основной (74%) — покупает до 15 000 ₽, выбирает классику\n• Премиальный (26%) — средний чек 32 000 ₽, интересуется бриллиантами и эксклюзивными коллекциями`,
+              feedback: 'Отличный промпт! Портрет получился конкретным и полезным для маркетинга',
+              followUp: 'Хотите сравнить эти два сегмента подробнее или посмотреть по городам?',
+              checks,
+            };
+          } else if (score >= 2) {
+            return {
+              quality: 52, level: 'ok',
+              reply: `Среди покупателей преобладают женщины. Средний чек около 8-9 тысяч рублей. Покупают чаще в праздники.\n\nДля более точного портрета — уточните: нужны демографические данные, поведенческие паттерны или сравнение сегментов?`,
+              feedback: 'Промпт дал слишком общий ответ — добавьте конкретные метрики и формат',
+              followUp: 'Добавьте в промпт: «укажи средний чек, частоту покупок, предпочитаемые категории. Опиши в 5 предложениях»',
+              checks,
+            };
+          } else {
+            return {
+              quality: 12, level: 'bad',
+              reply: `Данные по транзакциям загружены. Там 5821 строка. Что именно вас интересует в покупателях?`,
+              feedback: 'Промпт не объяснил задачу вообще — начните с чёткого «составь портрет типичного покупателя»',
+              followUp: 'Используйте шаблон: «На основе транзакций составь портрет типичного покупателя: [список метрик]. Опиши в [формат].»',
+              checks,
+            };
+          }
+        },
+        isLast: false,
+      },
+      {
+        evaluate: (msg) => {
+          const hasSegment = /сегмент|сравни|разниц|vs|против|бриллиант|премиал|эконом/i.test(msg);
+          const hasCity    = /город|регион|москв|питер|спб|екатерин/i.test(msg);
+          const hasAction  = /исполь|марк|реклам|кампан|стратег|предлож/i.test(msg);
+
+          if (hasSegment || hasCity || hasAction) {
+            return {
+              quality: 94, level: 'good',
+              reply: hasSegment
+                ? `**Сравнение сегментов:**\n\n**Основной сегмент** (чек до 15К): покупает серьги и кольца, реагирует на скидки, активен в соцсетях, лоялен при наличии накопительной программы.\n\n**Премиальный сегмент** (чек от 15К): покупает кольца с камнями и браслеты, ценит консультацию в магазине, слабо реагирует на скидки, важен персональный сервис.`
+                : hasCity
+                ? `**По городам:** Москва — 34% выручки, средний чек 11 200 ₽. СПб — 18%, средний чек 9 800 ₽. Екатеринбург — 8%, средний чек 7 400 ₽. В регионах средний чек ниже на 23%, но частота покупок выше.`
+                : `**Маркетинговые рекомендации:**\n1. Для основного сегмента — email-рассылки перед праздниками с подборкой до 10 000 ₽\n2. Для премиального — персональные приглашения на закрытые показы\n3. Таргетировать рекламу на женщин 28–42 в январе и ноябре`,
+              feedback: 'Вы умело используете диалог — взяли ответ и запросили конкретное продолжение!',
+              followUp: null,
+              checks: [
+                { label: 'Использован предыдущий ответ', has: true },
+                { label: 'Запрошено углубление', has: hasSegment || hasCity },
+                { label: 'Практический запрос', has: hasAction },
+                { label: 'Конкретная тема', has: true },
+              ],
+            };
+          } else {
+            return {
+              quality: 28, level: 'bad',
+              reply: `Могу продолжить анализ. Что именно интересует дальше?`,
+              feedback: 'Слишком расплывчато — ИИ не смог дать полезный ответ',
+              followUp: null,
+              checks: [
+                { label: 'Использован предыдущий ответ', has: false },
+                { label: 'Запрошено углубление', has: false },
+                { label: 'Практический запрос', has: false },
+                { label: 'Конкретная тема', has: false },
+              ],
+            };
+          }
+        },
+        isLast: true,
+        tip: 'Хороший портрет клиента — это всегда продолжение диалога. Сначала получаете общий портрет, потом погружаетесь в конкретный сегмент или географию. Именно так рождаются маркетинговые инсайты.',
+      },
+    ],
+  },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state = {
+  currentScenario: null,
+  currentTurn: 0,
+  totalScore: 0,
+  completedScenarios: new Set(),
+  turnScores: [],
+};
+
+// ── RENDER SCENARIOS ──────────────────────────────────────────────────────────
+function renderScenarios() {
+  const list = document.getElementById('scenarioList');
+  list.innerHTML = '';
+  SCENARIOS.forEach((sc, i) => {
+    const done = state.completedScenarios.has(sc.id);
+    const active = state.currentScenario?.id === sc.id;
+    const card = document.createElement('div');
+    card.className = `scenario-card${active ? ' active' : ''}${done ? ' done' : ''}`;
+    card.innerHTML = `
+      <div class="sc-tag">${sc.tag}</div>
+      <div class="sc-title">${sc.icon} ${sc.title}</div>
+      <div class="sc-desc">${sc.desc}</div>
+      <div class="sc-difficulty ${sc.difficulty}">
+        <span></span><span></span><span></span>
+      </div>
+    `;
+    card.addEventListener('click', () => loadScenario(sc));
+    list.appendChild(card);
+  });
+}
+
+// ── LOAD SCENARIO ─────────────────────────────────────────────────────────────
+function loadScenario(sc) {
+  state.currentScenario = sc;
+  state.currentTurn = 0;
+  state.turnScores = [];
+
+  // UI switch
+  document.getElementById('emptyState').classList.add('hidden');
+  const activeUI = document.getElementById('activeUI');
+  activeUI.classList.remove('hidden');
+  activeUI.style.display = 'flex';
+
+  document.getElementById('introIcon').textContent = sc.icon;
+  document.getElementById('introTitle').textContent = sc.title;
+  document.getElementById('introDesc').textContent = sc.intro;
+  document.getElementById('dataPill').textContent = sc.dataPill;
+
+  // Clear chat
+  document.getElementById('chatArea').innerHTML = '';
+
+  // AI greeting
+  setTimeout(() => {
+    addMessage('ai', `Привет! Файл загружен. ${sc.intro}\n\nКак вы хотите начать анализ? Напишите промпт ниже — я оценю его качество и отвечу.`, false);
+    renderSuggestions(sc.suggestions);
+  }, 300);
+
+  renderScenarios();
+}
+
+// ── MESSAGES ──────────────────────────────────────────────────────────────────
+function addMessage(role, text, withFeedback, feedbackData) {
+  const area = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'ai' ? '🤖' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+
+  const name = document.createElement('div');
+  name.className = 'msg-name';
+  name.textContent = role === 'ai' ? 'ИИ-ассистент' : 'Вы';
+  bubble.appendChild(name);
+
+  const textEl = document.createElement('div');
+  textEl.innerHTML = formatText(text);
+  bubble.appendChild(textEl);
+
+  if (withFeedback && feedbackData) {
+    // Quality meter
+    const meter = document.createElement('div');
+    meter.className = 'quality-meter';
+
+    const qlabel = document.createElement('div');
+    qlabel.className = 'quality-label';
+    qlabel.textContent = `КАЧЕСТВО ПРОМПТА — ${feedbackData.quality}%`;
+    meter.appendChild(qlabel);
+
+    const bar = document.createElement('div');
+    bar.className = 'quality-bar';
+    const fill = document.createElement('div');
+    fill.className = 'quality-fill';
+    fill.style.width = '0%';
+    fill.style.background = feedbackData.quality >= 75
+      ? 'linear-gradient(90deg, #22C55E, #16A34A)'
+      : feedbackData.quality >= 45
+      ? 'linear-gradient(90deg, #E8A020, #D97706)'
+      : 'linear-gradient(90deg, #EF4444, #DC2626)';
+    bar.appendChild(fill);
+    meter.appendChild(bar);
+
+    const items = document.createElement('div');
+    items.className = 'quality-items';
+    feedbackData.checks.forEach(c => {
+      const item = document.createElement('div');
+      item.className = `quality-item ${c.has ? 'has' : 'missing'}`;
+      item.textContent = c.label;
+      items.appendChild(item);
+    });
+    meter.appendChild(items);
+    bubble.appendChild(meter);
+
+    // Animate fill after render
+    setTimeout(() => { fill.style.width = feedbackData.quality + '%'; }, 100);
+
+    // Feedback badge on user message — we'll add it below AI msg
+  }
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  area.appendChild(msg);
+
+  // Feedback badge as separate AI system note (for user bubble - add after)
+  if (withFeedback && feedbackData && role === 'user') {
+    // Add AI feedback note
+  }
+
+  area.scrollTop = area.scrollHeight;
+  return bubble;
+}
+
+function addUserMessage(text) {
+  const area = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = 'msg user';
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = '👤';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  const name = document.createElement('div');
+  name.className = 'msg-name';
+  name.textContent = 'Вы';
+  bubble.appendChild(name);
+  const textEl = document.createElement('div');
+  textEl.textContent = text;
+  bubble.appendChild(textEl);
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  area.appendChild(msg);
+  area.scrollTop = area.scrollHeight;
+}
+
+function addTyping() {
+  const area = document.getElementById('chatArea');
+  const msg = document.createElement('div');
+  msg.className = 'msg ai typing-msg';
+  msg.id = 'typingMsg';
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = '🤖';
+  const dots = document.createElement('div');
+  dots.className = 'typing-dots';
+  dots.innerHTML = '<span></span><span></span><span></span>';
+  msg.appendChild(avatar);
+  msg.appendChild(dots);
+  area.appendChild(msg);
+  area.scrollTop = area.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingMsg');
+  if (t) t.remove();
+}
+
+function formatText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>')
+    .replace(/•\s/g, '• ');
+}
+
+// ── SUGGESTIONS ───────────────────────────────────────────────────────────────
+function renderSuggestions(items) {
+  const row = document.getElementById('suggestionsRow');
+  row.innerHTML = '';
+  items.forEach(text => {
+    const chip = document.createElement('div');
+    chip.className = 'suggestion-chip';
+    chip.textContent = text;
+    chip.addEventListener('click', () => {
+      document.getElementById('userInput').value = text;
+      document.getElementById('userInput').focus();
+    });
+    row.appendChild(chip);
+  });
+  document.getElementById('suggestionsArea').style.display = '';
+}
+
+function hideSuggestions() {
+  document.getElementById('suggestionsArea').style.display = 'none';
+}
+
+// ── SEND ──────────────────────────────────────────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || !state.currentScenario) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  hideSuggestions();
+  addUserMessage(text);
+
+  const sc = state.currentScenario;
+  const turn = sc.turns[state.currentTurn];
+
+  addTyping();
+
+  const delay = 900 + Math.random() * 600;
+  setTimeout(() => {
+    removeTyping();
+    const result = turn.evaluate(text);
+    state.turnScores.push(result.quality);
+
+    // Add AI reply with quality meter
+    const area = document.getElementById('chatArea');
+    const msg = document.createElement('div');
+    msg.className = 'msg ai';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = '🤖';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    const name = document.createElement('div');
+    name.className = 'msg-name';
+    name.textContent = 'ИИ-ассистент';
+    bubble.appendChild(name);
+    const textEl = document.createElement('div');
+    textEl.innerHTML = formatText(result.reply);
+    bubble.appendChild(textEl);
+
+    // Quality meter
+    const meter = document.createElement('div');
+    meter.className = 'quality-meter';
+    const qlabel = document.createElement('div');
+    qlabel.className = 'quality-label';
+    qlabel.textContent = `КАЧЕСТВО ВАШЕГО ПРОМПТА — ${result.quality}%`;
+    meter.appendChild(qlabel);
+    const bar = document.createElement('div');
+    bar.className = 'quality-bar';
+    const fill = document.createElement('div');
+    fill.className = 'quality-fill';
+    fill.style.width = '0%';
+    fill.style.background = result.quality >= 75
+      ? 'linear-gradient(90deg, #22C55E, #16A34A)'
+      : result.quality >= 45
+      ? 'linear-gradient(90deg, #E8A020, #D97706)'
+      : 'linear-gradient(90deg, #EF4444, #DC2626)';
+    bar.appendChild(fill);
+    meter.appendChild(bar);
+    const items = document.createElement('div');
+    items.className = 'quality-items';
+    result.checks.forEach(c => {
+      const item = document.createElement('div');
+      item.className = `quality-item ${c.has ? 'has' : 'missing'}`;
+      item.textContent = c.label;
+      items.appendChild(item);
+    });
+    meter.appendChild(items);
+
+    // Feedback badge
+    const badge = document.createElement('div');
+    badge.className = `feedback-badge ${result.level}`;
+    badge.textContent = result.level === 'good' ? '✓ ' + result.feedback
+      : result.level === 'ok' ? '~ ' + result.feedback
+      : '✗ ' + result.feedback;
+    meter.appendChild(badge);
+    bubble.appendChild(meter);
+
+    // Follow-up hint
+    if (result.followUp) {
+      setTimeout(() => {
+        const hintRow = document.createElement('div');
+        hintRow.style.cssText = 'margin-top:10px;padding:8px 12px;background:rgba(10,138,154,0.1);border-radius:8px;border:1px solid rgba(10,138,154,0.2);font-size:12px;color:#6BBCCC;';
+        hintRow.textContent = '💡 ' + result.followUp;
+        bubble.appendChild(hintRow);
+        area.scrollTop = area.scrollHeight;
+      }, 400);
+    }
+
+    msg.appendChild(avatar);
+    msg.appendChild(bubble);
+    area.appendChild(msg);
+    setTimeout(() => { fill.style.width = result.quality + '%'; }, 100);
+    area.scrollTop = area.scrollHeight;
+
+    state.currentTurn++;
+
+    if (turn.isLast) {
+      // Scenario complete
+      setTimeout(() => showResult(sc, turn.tip), 1200);
+    }
+  }, delay);
+}
+
+// ── RESULT ────────────────────────────────────────────────────────────────────
+function showResult(sc, tip) {
+  const avg = Math.round(state.turnScores.reduce((a,b) => a+b, 0) / state.turnScores.length);
+  const points = Math.round(avg * 0.4); // max 40 per scenario
+
+  state.totalScore += points;
+  state.completedScenarios.add(sc.id);
+  document.getElementById('totalScore').textContent = state.totalScore;
+
+  const overlay = document.getElementById('resultOverlay');
+  document.getElementById('resultEmoji').textContent = avg >= 80 ? '🏆' : avg >= 55 ? '💪' : '📚';
+  document.getElementById('resultTitle').textContent = avg >= 80 ? 'Отличная работа!' : avg >= 55 ? 'Хороший результат!' : 'Есть куда расти!';
+  document.getElementById('resultSub').textContent = `Средний балл промптов: ${avg}% — ${avg >= 80 ? 'промпты чёткие и конкретные' : avg >= 55 ? 'промпты в целом понятны, но можно точнее' : 'промптам не хватало конкретики и структуры'}`;
+  document.getElementById('resultScoreBig').textContent = '+' + points;
+  document.getElementById('resultTip').innerHTML = `<strong>Главный урок этого сценария:</strong><br>${tip}`;
+
+  // Next button
+  const nextIdx = SCENARIOS.findIndex(s => !state.completedScenarios.has(s.id));
+  const btn = document.getElementById('resultBtn');
+  if (nextIdx >= 0) {
+    btn.textContent = 'Следующий сценарий →';
+    btn.onclick = () => {
+      overlay.classList.remove('show');
+      loadScenario(SCENARIOS[nextIdx]);
+    };
+  } else {
+    btn.textContent = '🎉 Все сценарии пройдены!';
+    btn.onclick = () => overlay.classList.remove('show');
+  }
+
+  overlay.classList.add('show');
+  renderScenarios();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('userInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+document.getElementById('userInput').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+
+renderScenarios();
+</script>
+</body>
+</html>

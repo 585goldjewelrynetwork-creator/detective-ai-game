@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Детектив и нейросети — игра ИИ-курса 585 GOLD</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="game-wrap">
+
+    <canvas id="game"></canvas>
+
+    <!-- ── Верхняя панель ── -->
+    <div id="hud">
+      <div class="hud-left">
+        <button id="notebook-btn" class="hud-btn hud-btn-accent" title="Блокнот улик (клавиша B)">
+          <span class="nb-icon">📓</span>
+          <span>Блокнот улик</span>
+          <span id="notebook-count" class="nb-count">0/6</span>
+        </button>
+        <!-- Ссылка на портал курса. Абсолютная — работает и в отдельном репозитории, и внутри сайта курса. -->
+        <a class="hud-btn" href="https://585goldjewelrynetwork-creator.github.io/ai-course-585gold/index.html">← Курс</a>
+      </div>
+      <div class="hud-right">
+        <div class="hud-zone" id="zone-label">Офис 585 GOLD</div>
+        <button id="fullscreen-btn" class="hud-btn" title="Во весь экран (клавиша F)">⛶ Во весь экран</button>
+      </div>
+    </div>
+
+    <div id="hint" class="hidden">Пробел — открыть</div>
+
+    <!-- ── Блокнот улик ── -->
+    <div id="notebook-panel" class="hidden">
+      <div class="nb-head">
+        <div>
+          <div class="nb-eyebrow">ДЕЛО №585</div>
+          <h3>Блокнот улик</h3>
+        </div>
+        <button class="nb-close" id="notebook-close" aria-label="Закрыть">×</button>
+      </div>
+      <div class="nb-progress">
+        <div class="nb-bar"><div class="nb-bar-fill" id="nb-bar-fill"></div></div>
+        <span id="nb-progress-text">0 из 6 находок</span>
+      </div>
+      <div class="nb-list" id="nb-list"></div>
+      <div class="nb-foot">Нажми на изученную улику, чтобы открыть материал заново</div>
+    </div>
+
+    <!-- ── Реплики персонажей ── -->
+    <div id="dialog-box" class="hidden">
+      <div class="dialog-name" id="dialog-name">ДЕТЕКТИВ</div>
+      <div class="dialog-text" id="dialog-text"></div>
+      <div class="dialog-foot">▼ Пробел — далее · Esc — закрыть</div>
+    </div>
+
+    <!-- ── Модалка находки ── -->
+    <div id="find-modal" class="modal-overlay hidden">
+      <div class="modal-card" id="find-card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-eyebrow" id="find-eyebrow">НАХОДКА</div>
+            <h2 id="find-title"></h2>
+            <div class="modal-sub" id="find-sub"></div>
+          </div>
+          <button class="modal-close" id="find-close" aria-label="Закрыть">×</button>
+        </div>
+        <div class="modal-body" id="find-body"></div>
+        <div class="modal-actions">
+          <span class="resize-note">↘ Потяни за правый нижний угол, чтобы увеличить или уменьшить окно</span>
+          <span class="count-note" id="find-count-note">Улика засчитается после этой кнопки →</span>
+          <a id="find-link" class="btn btn-ghost hidden" target="_blank" rel="noopener">Открыть полный урок ↗</a>
+          <button id="find-ok" class="btn btn-primary">Понятно, иду дальше</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Финал ── -->
+    <div id="final-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-eyebrow">ХРАНИЛИЩЕ ОТКРЫТО</div>
+            <h2>Максимальная эффективность найдена</h2>
+            <div class="modal-sub">Все улики собраны — расследование завершено</div>
+          </div>
+        </div>
+        <div class="modal-body">
+          <p>Детектив закрывает дело: секрет не в одной волшебной кнопке, а в том, чтобы пробовать нейросети каждый день — в письмах, отчётах, презентациях, поиске идей.</p>
+          <p>Собранные улики — только вступление. Полный курс разбирает каждый инструмент по шагам.</p>
+          <video controls preload="none" style="width:100%;border-radius:10px;margin-top:12px;">
+            <source src="assets/video-promo.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="modal-actions">
+          <a href="https://585goldjewelrynetwork-creator.github.io/ai-course-585gold/index.html" class="btn btn-primary">Пройти полный курс по ИИ →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Вступление ── -->
+    <div id="intro-modal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-eyebrow">ДЕЛО №585</div>
+            <h2>Детектив и нейросети</h2>
+            <div class="modal-sub">Расследование на территории 585 GOLD</div>
+          </div>
+        </div>
+        <div class="modal-body">
+          <p>Меня вызвали в 585 GOLD: у всех одни и те же нейросети под рукой, а результаты — разные. Кто-то экономит часы каждую неделю, кто-то так и не понял, зачем ему это.</p>
+          <p>Моя задача — обойти территорию, собрать улики, опросить коллег и понять: как выжать из ИИ максимальную эффективность.</p>
+          <p class="modal-hint">Улика считается собранной только после того, как в её окне нажать «Понятно, иду дальше» — тогда маркер на карте станет зелёным, а счётчик в блокноте вырастет.</p>
+          <div class="intro-keys">
+            <div><b>Стрелки / WASD</b> — идти</div>
+            <div><b>Пробел</b> — взаимодействовать</div>
+            <div><b>B</b> — блокнот улик</div>
+            <div><b>F</b> — во весь экран</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="intro-start" class="btn btn-primary">Начать расследование</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

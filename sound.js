@@ -4,7 +4,13 @@
 // Всё синтезируется в браузере через Web Audio API — звуковых файлов нет,
 // репозиторий не тяжелеет. Мелодия оригинальная, написана в 8-битной эстетике.
 //
-// Звук по умолчанию ВЫКЛЮЧЕН. Выбор запоминается в браузере сотрудника.
+// ЛОГИКА:
+//   Звуковые эффекты (шаги, монетка, блипы, фанфары) — работают всегда.
+//   Фоновая мелодия — включается и выключается: кнопкой сверху, кнопкой «♫»
+//   в окне улики и клавишей M. Выбор запоминается в браузере сотрудника.
+//
+// Браузеры не разрешают звук до первого действия пользователя, поэтому
+// game.js вызывает Sound.resume() по клику «Начать расследование».
 // ============================================================================
 
 const Sound = (function () {
@@ -12,14 +18,14 @@ const Sound = (function () {
   let master = null;
   let musicGain = null;
   let sfxGain = null;
-  let enabled = false;
+  let musicOn = true;          // фоновая мелодия
   let musicTimer = null;
   let musicStep = 0;
 
   // ---------- Загрузка сохранённого выбора ----------
   try {
-    enabled = localStorage.getItem("detective_sound") === "on";
-  } catch (e) { enabled = false; }
+    musicOn = localStorage.getItem("detective_music") !== "off";
+  } catch (e) { musicOn = true; }
 
   function ensureCtx() {
     if (ctx) return true;
@@ -31,7 +37,9 @@ const Sound = (function () {
     master.connect(ctx.destination);
 
     musicGain = ctx.createGain();
-    musicGain.gain.value = 0.16;      // фон тише эффектов
+    // Громкость фоновой музыки. 0.06 — заметно тише эффектов, не мешает читать.
+    // Если понадобится ещё тише — 0.04; громче — 0.10.
+    musicGain.gain.value = 0.06;
     musicGain.connect(master);
 
     sfxGain = ctx.createGain();
@@ -41,7 +49,6 @@ const Sound = (function () {
   }
 
   // ---------- Одна нота ----------
-  // freq — частота Гц, dur — длительность сек, type — форма волны
   function note(freq, dur, when, type, gainNode, vol) {
     if (!ctx) return;
     const osc = ctx.createOscillator();
@@ -50,7 +57,6 @@ const Sound = (function () {
     osc.frequency.setValueAtTime(freq, when);
 
     const v = vol === undefined ? 1 : vol;
-    // короткая атака и спад — характерное «пиканье» 8-бит
     g.gain.setValueAtTime(0, when);
     g.gain.linearRampToValueAtTime(v, when + 0.008);
     g.gain.setValueAtTime(v, when + dur * 0.6);
@@ -62,7 +68,7 @@ const Sound = (function () {
     osc.stop(when + dur + 0.02);
   }
 
-  // Скользящая нота (для «прыжка» и открытия)
+  // Скользящая нота
   function slide(f1, f2, dur, when, type, vol) {
     if (!ctx) return;
     const osc = ctx.createOscillator();
@@ -102,8 +108,6 @@ const Sound = (function () {
   };
 
   // ---------- Фоновая мелодия ----------
-  // Оригинальная тема в мажоре, 16 шагов, зацикливается.
-  // Верхний голос — мелодия, нижний — бас.
   const MELODY = [
     N.C5, N.E5, N.G5, N.E5,  N.F5, N.A5, N.G5, N.E5,
     N.D5, N.F5, N.A5, N.F5,  N.E5, N.G5, N.C6, 0,
@@ -115,19 +119,19 @@ const Sound = (function () {
   const STEP = 0.16; // сек на шаг
 
   function musicTick() {
-    if (!enabled || !ctx) return;
+    if (!musicOn || !ctx) return;
     const t = ctx.currentTime + 0.05;
     const m = MELODY[musicStep % MELODY.length];
     const b = BASS[musicStep % BASS.length];
-    if (m) note(m, STEP * 0.9, t, "square", musicGain, 0.5);
-    if (b) note(b, STEP * 1.6, t, "triangle", musicGain, 0.8);
-    // легкая перкуссия на четные шаги
-    if (musicStep % 4 === 0) click(t, 0.05);
+    if (m) note(m, STEP * 0.9, t, "square", musicGain, 0.42);
+    if (b) note(b, STEP * 1.6, t, "triangle", musicGain, 0.6);
+    if (musicStep % 4 === 0) click(t, 0.025);
     musicStep++;
   }
 
   function startMusic() {
-    if (musicTimer || !enabled) return;
+    if (musicTimer || !musicOn) return;
+    if (!ensureCtx()) return;
     musicStep = 0;
     musicTick();
     musicTimer = setInterval(musicTick, STEP * 1000);
@@ -136,36 +140,42 @@ const Sound = (function () {
     if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
   }
 
-  // ---------- Публичные эффекты ----------
-  const api = {
-    isEnabled() { return enabled; },
+  // Эффект можно играть только если звук уже «разбужен» жестом пользователя
+  function sfxReady() {
+    if (!ensureCtx()) return false;
+    if (ctx.state === "suspended") ctx.resume();
+    return true;
+  }
 
-    // Включение/выключение. Вызывать по клику — браузеры требуют жест пользователя.
-    toggle() {
-      enabled = !enabled;
-      try { localStorage.setItem("detective_sound", enabled ? "on" : "off"); } catch (e) {}
-      if (enabled) {
-        if (!ensureCtx()) { enabled = false; return false; }
-        if (ctx.state === "suspended") ctx.resume();
-        api.blip();
-        startMusic();
+  const api = {
+    // ---- Фоновая мелодия ----
+    isMusicOn() { return musicOn; },
+
+    // Переключает только мелодию. Эффекты не затрагивает.
+    toggleMusic() {
+      musicOn = !musicOn;
+      try { localStorage.setItem("detective_music", musicOn ? "on" : "off"); } catch (e) {}
+      if (musicOn) {
+        if (sfxReady()) startMusic();
       } else {
         stopMusic();
       }
-      return enabled;
+      return musicOn;
     },
 
-    // Восстановление музыки после первого клика, если звук был включён ранее
-    resumeIfEnabled() {
-      if (!enabled) return;
+    // Вызывается по первому клику пользователя: разрешает звук в браузере
+    // и запускает мелодию, если она включена.
+    resume() {
       if (!ensureCtx()) return;
       if (ctx.state === "suspended") ctx.resume();
-      startMusic();
+      if (musicOn) startMusic();
     },
+
+    // ---- Эффекты: работают всегда ----
 
     // Улика засчитана — восходящая «монетка»
     coin() {
-      if (!enabled || !ensureCtx()) return;
+      if (!sfxReady()) return;
       const t = ctx.currentTime;
       note(N.B5, 0.08, t, "square", sfxGain, 0.9);
       note(N.E6, 0.34, t + 0.08, "square", sfxGain, 0.9);
@@ -173,7 +183,7 @@ const Sound = (function () {
 
     // Открытие окна с материалом
     open() {
-      if (!enabled || !ensureCtx()) return;
+      if (!sfxReady()) return;
       const t = ctx.currentTime;
       note(N.E5, 0.06, t, "square", sfxGain, 0.6);
       note(N.A5, 0.10, t + 0.06, "square", sfxGain, 0.6);
@@ -181,33 +191,33 @@ const Sound = (function () {
 
     // Закрытие окна
     close() {
-      if (!enabled || !ensureCtx()) return;
+      if (!sfxReady()) return;
       slide(N.A5, N.D5, 0.12, ctx.currentTime, "square", 0.4);
     },
 
     // Реплика персонажа
     blip() {
-      if (!enabled || !ensureCtx()) return;
+      if (!sfxReady()) return;
       note(N.G5, 0.05, ctx.currentTime, "square", sfxGain, 0.35);
     },
 
     // Шаг персонажа
     step() {
-      if (!enabled || !ctx) return;
+      if (!ctx) return;              // до первого жеста молчим
       click(ctx.currentTime, 0.07);
     },
 
     // Подошёл к точке интереса
     near() {
-      if (!enabled || !ensureCtx()) return;
+      if (!sfxReady()) return;
       const t = ctx.currentTime;
       note(N.C5, 0.05, t, "triangle", sfxGain, 0.4);
       note(N.G5, 0.07, t + 0.05, "triangle", sfxGain, 0.4);
     },
 
-    // Финал — фанфары
+    // Финал — фанфары. Мелодию на время глушим, чтобы не мешала.
     fanfare() {
-      if (!enabled || !ensureCtx()) return;
+      if (!sfxReady()) return;
       stopMusic();
       const t = ctx.currentTime;
       const seq = [

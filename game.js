@@ -67,8 +67,8 @@ const POIS = [
     eyebrow: "Улика 1 · Основы основ",
     link: COURSE_LINKS.block1,
     body: `
-      <p>Всё начинается с промпта — вашего запроса или инструкции для ИИ. Это не просто текст в строке ввода, а язык общения с мощным инструментом. Качественный промпт = качественный результат.</p>
-      <p>Главное в работе с нейросетью — <b>контекст</b>. Представьте, что вы общаетесь со своим ассистентом, который многое умеет и готов помочь вам, однако не видит полной картины.</p>
+      <p>Всё начинается с промпта — твоего запроса или инструкции для ИИ. Это не просто текст в строке ввода, а язык общения с мощным инструментом. Качественный промпт = качественный результат.</p>
+      <p>Главное в работе с нейросетью — <b>контекст</b>. Представь, что общаешься с ассистентом, который многое умеет и готов помочь, однако не видит полной картины.</p>
       <h3>Что внутри полного урока</h3>
       <p>Как формулировать задачу, чтобы получить нужный результат с первого раза; какую роль и контекст задавать нейросети; как уточнять и переспрашивать, если ответ не подошёл.</p>
       <div class="modal-callout">💡 Хороший промпт отвечает на три вопроса: кто ты (роль), что нужно сделать (задача) и в каком виде выдать результат (формат).</div>
@@ -81,7 +81,7 @@ const POIS = [
     eyebrow: "Улика 2 · Текст",
     link: COURSE_LINKS.block2,
     body: `
-      <p>С помощью ИИ можно составлять деловые письма, структурировать информацию, редактировать и улучшать тексты, писать отчёты быстрее. ИИ не напишет текст вместо вас, но станет идеальным черновиком. Для идеального результата загрузите в чат или проект примеры текста, который вам нравится по стилю и содержанию.</p>
+      <p>С помощью ИИ можно составлять деловые письма, структурировать информацию, редактировать и улучшать тексты, писать отчёты быстрее. ИИ не напишет текст вместо тебя, но станет идеальным черновиком. Для идеального результата загрузи в чат или проект примеры текстов, которые нравятся тебе по стилю и содержанию.</p>
       <h3>Короткий пример коллеги</h3>
       <p>Запись ниже — обзор одной из нейросетей для работы с текстом.</p>
       <video controls preload="none" style="width:100%;border-radius:10px;">
@@ -96,8 +96,8 @@ const POIS = [
     eyebrow: "Улика 3 · Аналитика",
     link: COURSE_LINKS.block3,
     body: `
-      <p>Анализируйте данные быстрее, находите неочевидные закономерности, стройте прогнозы и тренды. Плюс — визуализация данных прямо через HTML-код: интерактивные графики в браузере, без Excel-эквилибристики.</p>
-      <h3>Видео-фрагмент урока</h3>
+      <p>Анализируй данные быстрее, находи неочевидные закономерности, строй прогнозы, выявляй тренды. Плюс — визуализация данных прямо через HTML-код: интерактивные графики в браузере, без Excel-эквилибристики.</p>
+      <h3>Видеофрагмент урока</h3>
       <video controls preload="none" style="width:100%;border-radius:10px;">
         <source src="assets/video-tables.mp4" type="video/mp4">
       </video>
@@ -125,10 +125,10 @@ const POIS = [
     eyebrow: "Улика 5 · Изображения и видео",
     link: COURSE_LINKS.block5,
     body: `
-      <p>ИИ станет вашим личным художником, фоторедактором и режиссёром: создание изображений с нуля, редактирование готовых фото, короткие видео — без съёмочной группы и сложного монтажа.</p>
+      <p>ИИ станет твоим личным художником, фоторедактором и режиссёром: создание изображений с нуля, редактирование готовых фото, короткие видео — без съёмочной группы и сложного монтажа.</p>
       <h3>Что внутри полного урока</h3>
       <p>Разбор нейросетей для картинок и видео, примеры для витрин и соцсетей, готовые сценарии для ювелирного контента.</p>
-      <div class="modal-callout">🎨 Шпаргалка по стилям изображений — <a href="assets/cheatsheet-image-styles.pdf" target="_blank" rel="noopener">открыть PDF</a>. Пригодится, когда будете описывать нейросети желаемую картинку.</div>
+      <div class="modal-callout">🎨 Шпаргалка по стилям изображений — <a href="assets/cheatsheet-image-styles.pdf" target="_blank" rel="noopener">открыть PDF</a>. Пригодится, когда будешь описывать нейросети нужную картинку.</div>
     `,
   },
   {
@@ -138,7 +138,7 @@ const POIS = [
     eyebrow: "Улика 6 · Мастерство",
     link: COURSE_LINKS.block6,
     body: `
-      <p>Управляйте ИИ как профи: сложные цепочки запросов, управление контекстом, промптинг для многостраничных документов и комплексных исследований. От любителя — к мастеру.</p>
+      <p>Управляй ИИ как профи: сложные цепочки запросов, управление контекстом, промптинг для многостраничных документов и комплексных исследований. От любителя — к мастеру.</p>
       <div class="modal-callout">🎯 Именно этот навык отличает того, кто «спрашивает у ИИ», от того, кто «работает с ИИ как с командой».</div>
     `,
   },
@@ -149,7 +149,7 @@ const BONUS = {
   zone: "Главная дорога у сада",
   title: "Симулятор диалога с ИИ",
   eyebrow: "Бонус · Тренажёр",
-  body: `<p>Потренируйся вести диалог с ИИ прямо сейчас — тренажёр оценивает твои формулировки и начисляет баллы. Не входит в общий счёт улик, но полезен для практики.</p>`,
+  body: `<p>Потренируйся вести диалог с ИИ прямо сейчас: тренажёр оценивает твои формулировки и начисляет баллы. В общий счёт улик он не входит, но для практики полезен.</p>`,
   openUrl: "assets/simulator/index.html",
 };
 
@@ -161,19 +161,19 @@ const NPCS = [
     "Собери шесть улик — и поймёшь, где та самая максимальная эффективность.",
   ]},
   { name: "Оля", spriteIndex: 4, col: 5.5, row: 6.6, lines: [
-    "У нас в отделе ИИ рисует черновики визуалов для курсов. Составляет программы обучения, пишет посты для ленты новостей. И даже эту игру помогла собрать за час.",
+    "У нас в отделе ИИ рисует черновики визуалов для курсов. Составляет программы обучения, пишет посты для ленты новостей. И даже эту игру помог собрать за час.",
     "Финальный вид доводим руками, но стартовая точка появляется за минуту.",
   ]},
   { name: "Дмитрий", spriteIndex: 0, col: 25.5, row: 5.6, lines: [
     "Раньше я писал «сделай красиво» и злился, что ИИ не понимает.",
-    "Оказалось, дело было в промпте, а не в нейросети. Как говорит житейская мудрость, мусор на входе = мусор на выходе.",
+    "Оказалось, дело было в промпте, а не в нейросети. Как говорит житейская мудрость, мусор на входе — мусор на выходе.",
   ]},
   { name: "Алексей", spriteIndex: 2, col: 32.5, row: 8.6, lines: [
-    "Аналитический отчёт по продажам за декабрь я собрал за 20 минут вместо трёх часов.",
+    "Аналитический отчёт по продажам за декабрь я собрал за двадцать минут вместо трёх часов.",
     "Записка рядом с фонтаном — там показан весь процесс.",
   ]},
   { name: "Светлана", spriteIndex: 3, col: 47.5, row: 6.6, lines: [
-    "Обед — лучшее время потренироваться. Тут главное начать, не нужно бояться плохого результата. Регулярная практика творит чудеса.",
+    "Обед — лучшее время потренироваться. Тут главное — начать, не нужно бояться плохого результата. Регулярная практика творит чудеса.",
     "Я тут в перерыве собрала презентацию на десять слайдов. Загляни в записку у столика, тебе будет интересно.",
   ]},
   { name: "Игорь", spriteIndex: 5, col: 70.5, row: 16.6, lines: [
@@ -493,19 +493,42 @@ window.addEventListener("resize", resizeCanvas);
 
 // ============================================================================
 // ЗВУК
+// ----------------------------------------------------------------------------
+// Эффекты (шаги, монетка, блипы) работают всегда и настройки не требуют.
+// Переключается только фоновая мелодия — тремя способами:
+//   кнопка сверху, кнопка «♫» в окне улики, клавиша M.
 // ============================================================================
-const soundBtn = document.getElementById("sound-btn");
-function refreshSoundBtn() {
-  const on = Sound.isEnabled();
-  soundBtn.textContent = on ? "🔊 Звук вкл" : "🔇 Звук выкл";
-  soundBtn.classList.toggle("hud-btn-accent", on);
+const soundBtn = document.getElementById("sound-btn");        // панель сверху
+const introSoundBtn = document.getElementById("intro-sound"); // окно вступления
+const musicBtn = document.getElementById("find-music");       // окно улики
+
+function refreshMusicUi() {
+  const on = Sound.isMusicOn();
+
+  if (soundBtn) {
+    soundBtn.textContent = on ? "♫ Музыка включена" : "♫ Музыка выключена";
+    soundBtn.classList.toggle("hud-btn-accent", on);
+    soundBtn.title = on ? "Выключить фоновую музыку (M)" : "Включить фоновую музыку (M)";
+  }
+  if (introSoundBtn) {
+    introSoundBtn.textContent = on ? "♫ Музыка включена" : "♫ Музыка выключена";
+  }
+  if (musicBtn) {
+    musicBtn.classList.toggle("on", on);
+    musicBtn.classList.toggle("off", !on);
+    musicBtn.title = on ? "Выключить фоновую музыку" : "Включить фоновую музыку";
+  }
 }
-function toggleSound() {
-  Sound.toggle();
-  refreshSoundBtn();
+
+function toggleMusic() {
+  Sound.toggleMusic();
+  refreshMusicUi();
 }
-soundBtn.onclick = toggleSound;
-refreshSoundBtn();
+
+if (soundBtn) soundBtn.onclick = toggleMusic;
+if (introSoundBtn) introSoundBtn.onclick = toggleMusic;
+if (musicBtn) musicBtn.onclick = toggleMusic;
+refreshMusicUi();
 
 const fsBtn = document.getElementById("fullscreen-btn");
 function toggleFullscreen() {
@@ -527,14 +550,16 @@ document.addEventListener("fullscreenchange", () => {
 // ============================================================================
 const BLOCKED_KEYS = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "];
 window.addEventListener("keydown", (e) => {
-  if (BLOCKED_KEYS.includes(e.key)) e.preventDefault();
+  // Если человек управляет видео, пробел оставляем видео (пауза/воспроизведение)
+  const onVideo = e.target && e.target.tagName === "VIDEO";
+  if (BLOCKED_KEYS.includes(e.key) && !onVideo) e.preventDefault();
   keys[e.key] = true;
 
-  if (e.key === " ") handleInteract();
+  if (e.key === " " && !onVideo) handleInteract();
   if (e.key === "Escape") closeTopLayer();
   if (e.key === "b" || e.key === "B" || e.key === "и" || e.key === "И") toggleNotebook();
   if (e.key === "f" || e.key === "F" || e.key === "а" || e.key === "А") toggleFullscreen();
-  if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") toggleSound();
+  if (e.key === "m" || e.key === "M" || e.key === "ь" || e.key === "Ь") toggleMusic();
 }, { passive: false });
 window.addEventListener("keyup", (e) => { keys[e.key] = false; });
 
@@ -545,7 +570,10 @@ function anyModalOpen() {
 }
 
 function handleInteract() {
+  // Окна (вступление, улика, финал) пробелом не закрываются — только кнопкой мышью,
+  // чтобы материал нельзя было пролистать случайным нажатием.
   if (gameState === "intro" || anyModalOpen()) return;
+
   const dialogBox = document.getElementById("dialog-box");
   if (!dialogBox.classList.contains("hidden")) { advanceDialog(); return; }
   if (!activeTarget) return;
@@ -559,6 +587,8 @@ function closeTopLayer() {
   if (!nb.classList.contains("hidden")) { closeNotebook(); return; }
   const fm = document.getElementById("find-modal");
   if (!fm.classList.contains("hidden")) { closeFind(); return; }
+  const fin = document.getElementById("final-modal");
+  if (!fin.classList.contains("hidden")) { closeFinal(); return; }
   const db = document.getElementById("dialog-box");
   if (!db.classList.contains("hidden")) { closeDialog(); return; }
 }
@@ -665,6 +695,24 @@ function maybeShowFinal() {
   }, 400);
 }
 
+// Финал можно закрыть и продолжить гулять по карте
+function closeFinal() {
+  document.getElementById("final-modal").classList.add("hidden");
+  const v = document.getElementById("final-video");
+  if (v) { try { v.pause(); } catch (e) {} }   // останавливаем ролик
+  Sound.resume();                              // возвращаем мелодию после фанфар
+  gameState = "playing";
+}
+document.getElementById("final-close").onclick = closeFinal;
+document.getElementById("final-back").onclick = closeFinal;
+
+// Открыть итоги заново — из блокнота, когда все улики собраны
+function openFinal() {
+  document.getElementById("final-modal").classList.remove("hidden");
+  closeNotebook();
+  gameState = "paused";
+}
+
 // ============================================================================
 // БЛОКНОТ УЛИК
 // ============================================================================
@@ -679,8 +727,10 @@ function renderNotebook() {
     btn.className = "nb-item" + (done ? " done" : " locked");
     btn.innerHTML =
       '<span class="nb-mark">' + (done ? "✓" : (i + 1)) + "</span>" +
-      '<span><span class="nb-item-title">' + (done ? poi.title : "Улика не найдена") + "</span>" +
-      '<span class="nb-item-meta">' + (done ? poi.zone : "Ищи здесь: " + poi.zone) + "</span></span>";
+      '<span class="nb-item-text">' +
+        '<span class="nb-item-title">' + (done ? poi.title : "Улика не найдена") + "</span>" +
+        '<span class="nb-item-meta">' + (done ? poi.zone : "Ищи здесь: " + poi.zone) + "</span>" +
+      "</span>";
     if (done) btn.onclick = () => openFind(poi);
     list.appendChild(btn);
   });
@@ -689,10 +739,27 @@ function renderNotebook() {
   b.className = "nb-item bonus";
   b.innerHTML =
     '<span class="nb-mark">★</span>' +
-    '<span><span class="nb-item-title">' + BONUS.title + "</span>" +
-    '<span class="nb-item-meta">Бонус · ' + BONUS.zone + "</span></span>";
+    '<span class="nb-item-text">' +
+      '<span class="nb-item-title">' + BONUS.title + "</span>" +
+      '<span class="nb-item-meta">Бонус · ' + BONUS.zone + "</span>" +
+    "</span>";
   b.onclick = () => openBonus(BONUS);
   list.appendChild(b);
+
+  // Итоги расследования — появляются, когда собраны все улики.
+  // Нужны, чтобы финал можно было открыть заново, если его закрыли.
+  if (progressDone.size >= POIS.length) {
+    const f = document.createElement("button");
+    f.className = "nb-item done";
+    f.innerHTML =
+      '<span class="nb-mark">🏆</span>' +
+      '<span class="nb-item-text">' +
+        '<span class="nb-item-title">Итоги расследования</span>' +
+        '<span class="nb-item-meta">Дело закрыто · открыть финал заново</span>' +
+      "</span>";
+    f.onclick = openFinal;
+    list.appendChild(f);
+  }
 }
 
 function openNotebook() {
@@ -716,8 +783,8 @@ document.getElementById("notebook-close").onclick = closeNotebook;
 // ---------- Вступление ----------
 document.getElementById("intro-start").onclick = () => {
   document.getElementById("intro-modal").classList.add("hidden");
-  Sound.resumeIfEnabled();   // клик — это жест пользователя, музыку можно запускать
-  refreshSoundBtn();
+  Sound.resume();      // клик — жест пользователя: браузер разрешает звук
+  refreshMusicUi();
   gameState = "playing";
 };
 

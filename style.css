@@ -201,8 +201,26 @@ canvas#game {
 .nb-item.done .nb-mark { background: #3fb96a; }
 .nb-item.bonus .nb-mark { background: #E8B23A; color: #2b2118; }
 
-.nb-item-title { font-size: 13.5px; font-weight: 700; color: #2b2118; line-height: 1.3; }
-.nb-item-meta { font-size: 11.5px; color: #8a7a5f; margin-top: 3px; }
+/* Обёртка текста в две строки: заголовок сверху, подпись под ним */
+.nb-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.nb-item-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #2b2118;
+  line-height: 1.3;
+}
+.nb-item-meta {
+  display: block;
+  font-size: 11.5px;
+  color: #8a7a5f;
+  line-height: 1.35;
+}
 
 .nb-foot {
   padding: 10px 16px 12px;
@@ -277,11 +295,34 @@ canvas#game {
 }
 .modal-header h2 { margin: 0; font-size: 26px; color: #2b2118; line-height: 1.2; }
 .modal-sub { color: #7a6a52; font-size: 13px; margin-top: 5px; }
+.modal-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
 .modal-close {
   background: none; border: none; font-size: 24px; line-height: 1;
   cursor: pointer; color: #7a6a52; padding: 4px;
 }
 .modal-close:hover { color: #2b2118; }
+
+/* Маленькая кнопка выключения фоновой музыки в окне улики */
+.modal-mini-btn {
+  background: #F2EADA;
+  border: 1.5px solid rgba(43,33,24,0.18);
+  border-radius: 7px;
+  width: 30px; height: 30px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  color: #8a7a5f;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-mini-btn:hover { border-color: #e8b23a; color: #2b2118; }
+.modal-mini-btn.on { background: #E8B23A; border-color: rgba(0,0,0,0.18); color: #2b2118; }
+.modal-mini-btn.off { text-decoration: line-through; }
 
 .modal-body {
   padding: 18px 26px;
@@ -315,25 +356,39 @@ canvas#game {
   font-size: 14px;
 }
 
+/* Строка с подсказкой про размер окна — под текстом, до кнопок */
+.modal-note-row {
+  flex: 0 0 auto;
+  padding: 4px 26px 0;
+  border-top: 1px solid rgba(43,33,24,0.10);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+.resize-note {
+  display: block;
+  font-size: 12.5px;
+  color: #9a8a70;
+  white-space: normal;   /* даём переносить, чтобы не обрезалось */
+  line-height: 1.4;
+}
+
 .modal-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 14px 26px 22px;
   flex: 0 0 auto;
-}
-.resize-note {
-  margin-right: auto;
-  font-size: 11.5px;
-  color: #9a8a70;
-  white-space: nowrap;
 }
 .count-note {
   font-size: 12px;
   font-weight: 700;
   color: #b5502a;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 260px;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .btn {
@@ -355,8 +410,10 @@ canvas#game {
 @media (max-width: 720px) {
   .modal-header h2 { font-size: 20px; }
   .modal-body { font-size: 15px; padding: 14px 18px; }
-  .resize-note { display: none; }
+  /* на узком экране растягивать окно мышью нечем — подсказку убираем */
+  .modal-note-row { display: none; }
   .modal-actions { flex-wrap: wrap; }
+  .count-note { max-width: 100%; text-align: left; }
   #notebook-panel { width: calc(100vw - 32px); }
   .hud-btn span:not(.nb-count):not(.nb-icon) { display: none; }
   .hud-zone { display: none; }
